@@ -1,0 +1,30 @@
+name: Publish tech-blog build result
+
+on: 
+  release:
+    types: [prereleased]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        ref: publish
+    - name: Set RELEASE_TAG env
+      run: echo RELEASE_TAG=${GITHUB_REF##*/} >> $GITHUB_ENV
+    - name: Download release file 
+      run: gh release download ${{env.RELEASE_TAG}} -p build.tar
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - run: tar xf build.tar
+    - run: git config --global user.email "contact@cocolearn.com"
+    - run: git config --global user.name "coco-learn"
+    - run: git add .
+    - name: commit for version ${{env.RELEASE_TAG}}
+      run: git commit -m "${{env.RELEASE_TAG}}"
+    - run: git push
+    - run: gh release delete ${{env.RELEASE_TAG}}
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - run: git push --delete origin ${{env.RELEASE_TAG}}
